@@ -1,0 +1,148 @@
+ <!DOCTYPE html>
+ <html lang="ml">
+ <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black Drawing Board</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: black;
+            touch-action: none; /* mobile-ൽ smooth drawing-ന് */
+        }
+        canvas {
+            display: block;
+        }
+        #trash {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 30px;
+            cursor: pointer;
+            color: white;
+            z-index: 10;
+        }
+        #recover {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: black;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+    </style>
+ </head>
+ <body>
+    <div id="trash">🗑</div>
+    <div id="recover"></div>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const trash = document.getElementById('trash');
+        const recover = document.getElementById('recover');
+        // Canvas full screen ആ ു ു
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        let drawing = true;
+        let paths = [];
+        let currentPath = [];
+        let deletedImageData = null; // മായ്ച്ച drawing ഇവിെട േസവ് െച ം
+        // Drawing functions
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            paths.forEach(path => {
+                if (path.length > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(path[0].x, path[0].y);
+                    path.forEach(point => ctx.lineTo(point.x, point.y));
+                    ctx.stroke();
+                }
+            });
+            // current path
+            if (currentPath.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(currentPath[0].x, currentPath[0].y);
+                currentPath.forEach(point => ctx.lineTo(point.x, point.y));
+                ctx.stroke();
+            }
+        }
+        function startDrawing(e) {
+            drawing = true;
+            const pos = getPosition(e);
+            currentPath = [{ x: pos.x, y: pos.y }];
+            paths.push(currentPath);
+        }
+        function whileDrawing(e) {
+            if (!drawing) return;
+            const pos = getPosition(e);
+            currentPath.push({ x: pos.x, y: pos.y });
+            draw();
+        }
+        function stopDrawing() {
+            if (drawing) {
+                drawing = false;
+            }
+        }
+        function getPosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', whileDrawing);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', whileDrawing);
+        canvas.addEventListener('touchend', stopDrawing);
+        // Delete (Trash)
+        trash.addEventListener('click', () => {
+            if (paths.length > 0) {
+                deletedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                paths = [];
+                currentPath = [];
+                draw();
+            }
+        });
+        // Recover (വലത് താെഴ area)
+        recover.addEventListener('click', () => {
+            if (deletedImageData) {
+                ctx.putImageData(deletedImageData, 0, 0);
+                paths = []; // പുതിയ drawing തുട ാൻ
+                currentPath = [];
+                deletedImageData = touches; //  recover 
+            }
+        });
+        draw();
+    </script>
+ </body>
+ </html
